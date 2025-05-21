@@ -1,0 +1,44 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Lambda Management Repository
+  SAM Template for managing multiple Lambda functions
+
+Globals:
+  Function:
+    Timeout: 30
+    Runtime: python3.9
+    MemorySize: 128
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        LOG_LEVEL: INFO
+
+Resources:
+  ExampleFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/example-function/
+      Handler: src/app.lambda_handler
+      Description: Example Lambda function
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /example
+            Method: get
+      Tags:
+        Project: LambdaManagement
+        Environment: dev
+
+Outputs:
+  ExampleFunction:
+    Description: "Example Lambda Function ARN"
+    Value: !GetAtt ExampleFunction.Arn
+  ExampleFunctionApi:
+    Description: "API Gateway endpoint URL for Example function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/example"
+  ExampleFunctionRole:
+    Description: "IAM Role created for Example function"
+    Value: !GetAtt ExampleFunctionRole.Arn

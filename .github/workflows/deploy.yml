@@ -1,0 +1,90 @@
+name: Deploy Lambda Functions
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy Lambda Functions
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'dev' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install aws-sam-cli
+          pip install pytest pytest-cov
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION || 'us-east-1' }}
+
+      - name: Install function dependencies
+        run: |
+          for func_dir in functions/*/; do
+            if [ -f "${func_dir}requirements.txt" ]; then
+              echo "Installing dependencies for ${func_dir}"
+              pip install -r "${func_dir}requirements.txt" --target "${func_dir}"
+            fi
+          done
+
+      - name: Run tests
+        run: |
+          for func_dir in functions/*/; do
+            if [ -d "${func_dir}tests" ]; then
+              echo "Running tests for ${func_dir}"
+              cd "${func_dir}"
+              python -m pytest tests/ -v
+              cd ../../
+            fi
+          done
+
+      - name: Build with SAM
+        run: sam build --use-container
+
+      - name: Deploy with SAM
+        run: |
+          sam deploy \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --stack-name lambda-management-${{ github.event.inputs.environment || 'dev' }} \
+            --s3-bucket ${{ secrets.DEPLOYMENT_BUCKET || format('lambda-deployment-{0}', github.repository_owner) }} \
+            --capabilities CAPABILITY_IAM \
+            --parameter-overrides \
+              Environment=${{ github.event.inputs.environment || 'dev' }}
+
+      - name: Output deployed endpoints
+        run: |
+          aws cloudformation describe-stacks \
+            --stack-name lambda-management-${{ github.event.inputs.environment || 'dev' }} \
+            --query "Stacks[0].Outputs[?OutputKey.contains(@, 'Api')].{Key:OutputKey,Value:OutputValue}" \
+            --output table
