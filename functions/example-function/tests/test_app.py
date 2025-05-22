@@ -24,10 +24,12 @@ class TestLambdaHandler(unittest.TestCase):
         # Call the Lambda handler
         response = lambda_handler(event, context)
         
+        body = json.loads(response['body'])
+
         # Assert the response
         self.assertEqual(response['statusCode'], 200)
         self.assertEqual(response['headers']['Content-Type'], 'application/json')
-        self.assertEqual(response['body']['message'], 'Hello from Lambda!')
+        self.assertEqual(body['message'], 'Hello from Lambda!')
     
     def test_lambda_handler_with_name(self):
         """Test the Lambda handler with a name parameter"""
@@ -42,11 +44,12 @@ class TestLambdaHandler(unittest.TestCase):
         
         # Call the Lambda handler
         response = lambda_handler(event, context)
-        
+        body = json.loads(response['body'])
+
         # Assert the response
         self.assertEqual(response['statusCode'], 200)
         self.assertEqual(response['headers']['Content-Type'], 'application/json')
-        self.assertEqual(response['body']['message'], 'Hello, Test User!')
+        self.assertEqual(body['message'], 'Hello, Test User!')
     
     @patch('src.app.print')
     def test_lambda_handler_exception(self, mock_print):
@@ -59,11 +62,12 @@ class TestLambdaHandler(unittest.TestCase):
         
         # Call the Lambda handler
         response = lambda_handler(event, context)
-        
+        body = json.loads(response['body'])
+
         # Assert the response
         self.assertEqual(response['statusCode'], 500)
         self.assertEqual(response['headers']['Content-Type'], 'application/json')
-        self.assertTrue('Error:' in response['body']['message'])
+        self.assertTrue('Error:' in body['message'])
         
         # Assert that the error was logged
         mock_print.assert_called()
