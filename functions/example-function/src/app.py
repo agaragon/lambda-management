@@ -1,3 +1,5 @@
+import json
+
 def lambda_handler(event, context):
     """
     Example Lambda function handler
@@ -35,10 +37,10 @@ def lambda_handler(event, context):
             'headers': {
                 'Content-Type': 'application/json'
             },
-            'body': {
+            'body': json.dumps({
                 'message': message,
                 'input': event
-            }
+            })
         }
     except Exception as e:
         # Log the error
