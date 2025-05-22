@@ -24,6 +24,8 @@ mkdir -p "$FUNCTION_DIR/tests"
 
 # Create app.py with Lambda handler
 cat > "$FUNCTION_DIR/src/app.py" << 'EOF'
+import json
+
 def lambda_handler(event, context):
     """
     Lambda function handler
@@ -54,10 +56,10 @@ def lambda_handler(event, context):
             'headers': {
                 'Content-Type': 'application/json'
             },
-            'body': {
+            'body': json.dumps({
                 'message': message,
                 'input': event
-            }
+            })
         }
     except Exception as e:
         # Log the error
@@ -69,9 +71,9 @@ def lambda_handler(event, context):
             'headers': {
                 'Content-Type': 'application/json'
             },
-            'body': {
+            'body': json.dumps({
                 'message': f"Error: {str(e)}"
-            }
+            })
         }
 EOF
 
@@ -106,7 +108,8 @@ class TestLambdaHandler(unittest.TestCase):
         # Assert the response
         self.assertEqual(response['statusCode'], 200)
         self.assertEqual(response['headers']['Content-Type'], 'application/json')
-        self.assertEqual(response['body']['message'], 'Hello from Lambda!')
+        body = json.loads(response['body'])
+        self.assertEqual(body['message'], 'Hello from Lambda!')
 
 if __name__ == '__main__':
     unittest.main()
