@@ -57,16 +57,16 @@ jobs:
             fi
           done
 
-      # - name: Run tests
-      #   run: |
-      #     for func_dir in functions/*/; do
-      #       if [ -d "${func_dir}tests" ]; then
-      #         echo "Running tests for ${func_dir}"
-      #         cd "${func_dir}"
-      #         python -m pytest tests/ -v
-      #         cd ../../
-      #       fi
-      #     done
+      - name: Run tests
+        run: |
+          for func_dir in functions/*/; do
+            if [ -d "${func_dir}tests" ]; then
+              echo "Running tests for ${func_dir}"
+              cd "${func_dir}"
+              python -m pytest tests/ -v
+              cd ../../
+            fi
+          done
 
       - name: Build with SAM
         run: sam build --use-container
